@@ -59,7 +59,7 @@ if ($appId == "" || $apiKey == "" || $email == "" || $password == "") {
             </p>
             <?php
 if (isset($_POST['upload'])) {
-    include("../mflib.php");
+    require_once("../mflib.php");
     $mflib           = new mflib($appId, $apiKey);
     $mflib->dupe     = $_POST['dupe'];
     $mflib->email    = $email;
