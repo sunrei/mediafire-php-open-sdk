@@ -4,6 +4,7 @@
  */
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
+require_once("../mflib.php");
 $appId    = "43117";
 $apiKey   = "wydv7s8f7mun7n0691eqb9ldumxfnt9drdqq0n24";
 $email    = "mediafire email";
@@ -59,7 +60,6 @@ if ($appId == "" || $apiKey == "" || $email == "" || $password == "") {
             </p>
             <?php
 if (isset($_POST['upload'])) {
-    require_once("../mflib.php");
     $mflib           = new mflib($appId, $apiKey);
     $mflib->dupe     = $_POST['dupe'];
     $mflib->email    = $email;
