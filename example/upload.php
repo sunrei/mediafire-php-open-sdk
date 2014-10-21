@@ -124,44 +124,6 @@ if (isset($_POST['upload'])) {
     }
 } //end of "if(isset($_POST['upload']))"        
 
-/*
-if (isset($_POST["upload"]))
-{
-/*
-* Move uploaded file to current script folder and start uploading
-*
-$uploadedFile = "./" . basename($_FILES["file"]["name"]);
-
-if (move_uploaded_file($_FILES["file"]["tmp_name"], $uploadedFile))
-{
-/*
-* Initilize a new instance of the class
-*
-include("../mflib.php");
-
-$mflib = new mflib($appId, $apiKey);
-$mflib->email = $email;
-$mflib->password = $password;
-
-/*
-* Select a file to be uploaded. The third argurment of method fileUpload() 
-* is the quickkey of the destination folder. In this case it's omitted, which 
-* means the file will be stored in the root folder - 'My files'
-*
-$sessionToken = $mflib->userGetSessionToken();
-$uploadKey = $mflib->fileUpload($sessionToken, $uploadedFile);
-}
-
-/*
-* Print the upload result
-*
-if ($uploadKey)
-{
-var_dump($mflib->filePollUpload($sessionToken, $uploadKey));
-}
-}
-
-*/
 ?>
         </form>
     </body>
