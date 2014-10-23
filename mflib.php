@@ -1,4 +1,4 @@
-<?php
+  <?php
 /**
  * This class is a wrapper to the MediaFire.com API.
  *
@@ -16,6 +16,9 @@
  * @copyright Copyright (c) 2012, WindyLea. All right reserved
  * @version 0.33
  */
+ if(@!include_once(dirname(__FILE__)."/upload.php")){
+ 	echo 'Upload Module not installed';
+ } 
 class mflib
 {
     /**
@@ -49,8 +52,6 @@ class mflib
      * @var string
      */
     public $password;
-    
-    public $dupe;
 
     /**
      * The Facebook Access Token of the user whose MediaFire account is 
@@ -95,9 +96,6 @@ class mflib
      * @var array
      */
     protected $apiUrl = array(
-		"UPLOAD_INSTANT" => "http://www.mediafire.com/api/1.1/upload/instant.php",
-    	"UPLOAD_CHECK" => "http://www.mediafire.com/api/upload/check.php",
-    	"UPLOAD_RESUME" => "http://www.mediafire.com/api/1.1/upload/resumable.php",
         "FILE_COLLABORATE" => "http://www.mediafire.com/api/file/collaborate.php",
         "FILE_CONFIGURE_ONE_TIME_DOWNLOAD" => "http://www.mediafire.com/api/file/configure_one_time_download.php",
         "FILE_COPY" => "http://www.mediafire.com/api/file/copy.php",
@@ -548,7 +546,7 @@ class mflib
         $responseHeader = trim(substr($response, 0, $position));
         $responseBody = trim(substr($response, $position));
         $this->httpResponseHeader = explode("\r\n", $responseHeader);
-		//print_r($responseBody);
+
         if(stripos($responseHeader, "Transfer-Encoding: chunked") !== false && $this->useCurl === false)
         {
             $responseBody = self::httpChunkedDecode($responseBody);
@@ -558,7 +556,6 @@ class mflib
         {
             return $responseBody;
         }
-        //print_r($responseHeader);
 
         /**
          * Parse the response body into array
@@ -585,157 +582,6 @@ class mflib
         }
     }
 
-function fsplit($filename,$targetfolder,$numb){
-	$targetfolder = $targetfolder; // target file
-	$filesize = filesize($filename);
-	$filesize = round(($filesize / 1048576), 2); // Gets Filesize in Mb
-// Below checks files size to chunk needed and gets file chunksize 
-	if($filesize >= 4){
-		$piecesize = 1;	// chuck size equals 1Mb if filesize is bigger then 4Mb
-	}
-	if($filesize >= 16){
-		$piecesize = 2;	// chuck size equals 2Mb if filesize is bigger then 16Mb
-	}
-	if($filesize >= 64){
-		$piecesize = 4;	// chuck size equals 4Mb if filesize is bigger then 64Mb
-	}
-	if($filesize >= 256){
-		$piecesize = 8;	// chuck size equals 8Mb if filesize is bigger then 256Mb
-	}
-	if($filesize >= 1000){
-		$piecesize = 16; // chuck size equals 16Mb if filesize is bigger then 1Gb	
-	}
-	if($filesize >= 4000){
-		$piecesize = 32;	// chuck size equals 32Mb if filesize is bigger then 4Gb
-	}
-	if($filesize >= 16000){
-		$piecesize = 64;	// chuck size equals 64Mb if filesize is bigger then 16Gb
-	}
-	$buffer = 1024;//Buffer size of chuck to write
-	$piece = 1048576*$piecesize; // Size of chunk in bytes
-	$current = 0;
-	$splitnum = 0;
-
-	if(!file_exists($targetfolder)) {
-		if(mkdir($targetfolder)) { // makes directory if split directory does not exist
-		}
-	}
-	
-	if(!$handle = fopen($filename, "rb")) {
-		die("Unable to open $filename for read!"); // script dies with this error if file cannot be edited 
-	}
-
-	$base_filename = basename($filename); // returns the base file name
-
-	$piece_name = $targetfolder.'/'.$splitnum.$base_filename; // is the chunk file name plus it location
-	if(!$fw = fopen($piece_name,"w")) {
-		die("Unable to open $piece_name for write."); // if can't write content into file displays this error
-	}
-	while (!feof($handle)) { // loop to split file
-	if($splitnum < $numb){
-	if($current < $piece) {
-		if($content = fread($handle, $buffer)) { // tells the script how much chunk to read before placing in split file
-			if(fwrite($fw, $content)) { // writes content to file1
-				$current += $buffer; // updates the current file content position for the next loop
-			} else {
-				die("unable to write to target folder."); // dies if folder is unwritable
-			}
-		}
-	} else {
-		fclose($fw);
-		$current = 0;
-		$splitnum++; // updates the chunk file position
-		$piece_name = $targetfolder.'/'.$splitnum.$base_filename;
-		$fw = fopen($piece_name,"w"); // checks to make sure file exists
-	}
-	}
-}
-	//below closes file write
-	fclose($fw);
-	fclose($handle);
-	}
-
-	public function instant($sessionToken, $filename, $name)
-    {
-		$filen = @split('/',$filename);
-        $query = array( // sets params of the file to check
-  			"session_token" => $sessionToken,
-  			"filename" => $name,
-  			"hash" => hash_file ("sha256",$filename),
-  			"size" => filesize($filename),
-  			"response_format" => 'json'
-  		);
-  		if($this->dupe != NULL){
-		$query = array( // sets params of the file to check
-  			"session_token" => $sessionToken,
-  			"filename" => $name,
-  			"hash" => hash_file ("sha256",$filename),
-  			"size" => filesize($filename),
-  			"action_on_duplicate" => $this->dupe,
-  			"response_format" => 'json'
-  		);	
-		}
-  		//echo '<br>Check query details:';
-  		//print_r($query);
-  		//echo '<br>';
-		//print_r($query);
-        $url = $this->apiUrl["UPLOAD_INSTANT"] . "?" . http_build_query($query, "", "&");
-        //print_r($url);
-        //echo '<br><br>'.$url.'<br><br>';
-        $data = $this->getContents($url);
-        // print_r($data);
-		//print_r($data);
-        if (!$data)
-        {
-            return false;
-        }
-		return TRUE;
-    }
-	public function check($sessionToken, $filename, $name)
-    {
-		$filen = @split('/',$filename);
-        $query = array( // sets params of the file to check
-  			"session_token" => $sessionToken,
-  			"filename" => $name,
-  			"resumable" => "yes",
-  			"hash" => hash_file ("sha256",$filename),
-  			"size" => filesize($filename),
-  			"response_format" => 'json'
-  		);
-  		//echo '<br>Check query details:';
-  		//print_r($query);
-  		//echo '<br>';
-
-        $url = $this->apiUrl["UPLOAD_CHECK"] . "?" . http_build_query($query, "", "&");
-        //echo '<br><br>'.$url.'<br><br>';
-        $data = $this->getContents($url);
-		//print_r($data);
-        if (!$data)
-        {
-            return false;
-        }
-		//print_r($data);
-		$oXML = $data;
-  		$filexist = $oXML['file_exists']; // gets response value file_exists
-  		$available = $oXML['available_space']; // gets reponse value available_space
-  		$hashexist = $oXML['hash_exists']; // gets hash_exists value from response
-  		@$quickkey = $oXML['duplicate_quickkey'];
-  		$unit = $oXML['resumable_upload']['number_of_units'];// gets number of units from response
-  		if($filexist == 'no'){
-  			if($hashexist != 'yes'){
-				if(filesize($filename) <= $available){
-					return $unit;
-				}else{
-					echo 'Not enough space';
-				}
-			}else{
-				return $hashexist; // returns yes or no based on if hash exists
-			}
-		}else{
-		return 'yes';
-		//echo $this->show_error('1',$filename); // show file name exists error
-		}
-    }
     /**
      * Dechunks an HTTP 'Transfer-Encoding: chunked' message
      *
@@ -747,7 +593,6 @@ function fsplit($filename,$targetfolder,$numb){
         properly it will be returned unmodified.
      * @static
      */
-     
     public static function httpChunkedDecode($chunk)
     {
         $pos = 0;
@@ -973,16 +818,23 @@ function fsplit($filename,$targetfolder,$numb){
      * @return string|bool Returns a 10-minute Access Session Token on success,
         otherwise FALSE if an error occurred
      */
-    public function userGetSessionToken()
+    public function userGetSessionToken($version)
     {
         $this->actions[] = "Getting new session token";
-
+	
         $query = array(
             "application_id" => $this->appId,
             "signature" => $this->userGetSignature(),
-            "response_format" => 'json',
-            //"token_version" => '2'
+            "response_format" => $this->responseFormat
         );
+        if($version == TRUE){
+		$query = array(
+            "application_id" => $this->appId,
+            "signature" => $this->userGetSignature(),
+            "token_version" => '2',
+            "response_format" => $this->responseFormat
+        );	
+		} 
 
         if (!empty($this->fbAccessToken))
         {
@@ -992,12 +844,10 @@ function fsplit($filename,$targetfolder,$numb){
             $query["email"] = $this->email;
             $query["password"] = $this->password;
         }
-		
+
         $url = $this->apiUrl["USER_GET_SESSION_TOKEN"] . "?" . http_build_query($query, "", "&");
-        //echo $url;
         $data = $this->getContents($url);
-        //($data);
-		//print_r($data);
+
         if (!$data)
         {
             return false;
@@ -1013,7 +863,7 @@ function fsplit($filename,$targetfolder,$numb){
      * @author windylea
      * @return string Returns a SHA1-hashed string
      */
-    protected function userGetSignature()
+    public function userGetSignature()
     {
         return sha1($this->email . $this->password . $this->appId . $this->apiKey);
     }
@@ -1041,7 +891,6 @@ function fsplit($filename,$targetfolder,$numb){
 
         $query = array(
             "session_token" => $sessionToken,
-            "signature" => $this->userGetSignature(),
             "response_format" => $this->responseFormat
         );
 
@@ -1796,124 +1645,6 @@ function fsplit($filename,$targetfolder,$numb){
         }
 
         return $data["myfiles_revision"];
-    }
-    
-	public function uploadResume($unitid,$sessionToken, $filename, $files = null,$uploadKey = "myfiles",
-    $customName = null)
-    {
-        $mimetype = "application/octet-stream";
-        if(strpos($filename, ";type=") !== false)
-        {
-            $parts = explode(";type=", $filename, 2);
-            $filename = $parts[0];
-            if (!empty($parts[1]))
-            {
-                $mimetype = $parts[1];
-            }
-        }
-
-        if (!file_exists($filename) || !is_readable($filename))
-        {
-            $this->showError("File is not exist or not readable");
-            return false;
-        }
-
-        $filesize = filesize($filename);
-        if ($filesize == 0)
-        {
-            $this->showError("File has no content");
-            return false;
-        }
-		//echo $filename;
-		$file = $filename;
-		$filename = explode('~*',$filename);
-		if($files != null){
-		$httpOptions = array(
-            "method" => "POST",
-            "file" => array(
-                "name" => "Filedata",
-                "path" => $file,
-                "type" => $mimetype
-            ),
-            "header" => array(
-                "Referer: http://www.mediafire.com",
-                'x-filename: '.$filename['1'],
-				'x-filesize: '.filesize($files),
-				'x-filehash: '.hash_file ("sha256",$files),
-				'x-unit-size: '.$filesize,
-				'x-unit-id: '.$unitid,
-				'x-unit-hash: '.hash_file ("sha256",$file),
-            )
-        );
-		}else{
-		$httpOptions = array(
-            "method" => "POST",
-            "file" => array(
-                "name" => "Filedata",
-                "path" => $file,
-                "type" => $mimetype
-            ),
-            "header" => array(
-                "Referer: http://www.mediafire.com",
-                'x-filename: '.$filename['1'],
-				'x-filesize: '.$filesize,
-				'x-filehash: '.hash_file ("sha256",$file),
-				'x-unit-size: '.$filesize,
-				'x-unit-id: 0',
-				'x-unit-hash: '.hash_file ("sha256",$file),
-            )
-        );
-		}
-        
-        //echo '<br>Resume Upload Detail:<br>';
-       // echo 'Header & Body Post Detail:<br>';
-       // print_r($httpOptions);
-        //echo '<br>';
-        if (is_string($customName) && !empty($customName))
-        {
-            $httpOptions["header"][] = "x-filename: $customName";
-        }
-
-        $query = array(
-            //"uploadkey" => $uploadKey,
-            //"quick_key" => 'jeug758k187df35',
-            "session_token" => $sessionToken,
-            "signature" => $this->userGetSignature(),
-            "response_format" => "xml",
-            //"path" => "MyFiles/folder"
-        );
-		if($this->dupe != NULL){
-		$query = array(
-            //"uploadkey" => $uploadKey,
-            //"quick_key" => 'jeug758k187df35',
-            "session_token" => $sessionToken,
-            "signature" => $this->userGetSignature(),
-
-            "action_on_duplicate" => $this->dupe,
-            "response_format" => "xml",
-            //"path" => "MyFiles/folder"
-        );	
-		}
-        $this->actions[] = "Uploading";
-        $url = $this->apiUrl["UPLOAD_RESUME"] . "?" . http_build_query($query, "", "&");
-        //echo '<br><br>'.$url.'<br><br>';
-        $data = $this->getContents($url, $httpOptions);
-        //echo '<br><br>';
-        //print_r($data);
-        //echo '<br><br>';
-		//print_r($data);
-        if (!$data)
-        {
-            return false;
-        }
-		@unlink($filename);
-		@unlink($files);
-        if (!isset($data["doupload"]["key"]) || trim($data["doupload"]["key"]) == "")
-        {
-            //$this->showError("Unable to upload file - Code '" . $data["doupload"]["result"] . "'");
-        }
-
-        return $data["doupload"]["key"];
     }
 
     /**

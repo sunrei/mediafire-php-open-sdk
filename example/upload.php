@@ -7,13 +7,11 @@ ini_set('display_errors', 1);
 require_once("../mflib.php");
 $appId    = "43117";
 $apiKey   = "wydv7s8f7mun7n0691eqb9ldumxfnt9drdqq0n24";
-$email    = "mediafire email";
-$password = "mediafire password";
-
+$email    = "MediaFire Username";
+$password = "MedaiFire Password";
 if ($appId == "" || $apiKey == "" || $email == "" || $password == "") {
     exit("<pre>One or more required parameters are missing.<br /><br />" . "Please open in this file in any text editor to fill all the required " . "parameters and try again.</pre>");
-}
-
+} //$appId == "" || $apiKey == "" || $email == "" || $password == ""
 /*
  * Show the upload form
  */
@@ -61,7 +59,9 @@ if ($appId == "" || $apiKey == "" || $email == "" || $password == "") {
             <?php
 if (isset($_POST['upload'])) {
     $mflib           = new mflib($appId, $apiKey);
-    $mflib->dupe     = $_POST['dupe'];
+    $upload          = new upload($mflib);
+    $upload->signature = $mflib->userGetSignature();
+    $upload->dupe    = $_POST['dupe'];
     $mflib->email    = $email;
     $mflib->password = $password;
     //echo $mflib->dupe;
@@ -79,30 +79,29 @@ if (isset($_POST['upload'])) {
                     $GLOBALS['msg'] = "($filen) cached to server<br>";
                     //Success message
                     echo $GLOBALS['msg'];
-                    $sessionToken = $mflib->userGetSessionToken();
+                    $sessionToken = $mflib->userGetSessionToken(null);
                     //echo '<br><br>';
-                    $unit         = $mflib->check($sessionToken, 'tmp/' . $email . '~*' . $filen, $filen);
+                    $unit         = $upload->check($sessionToken, 'tmp/' . $email . '~*' . $filen, $filen);
                     if ($unit == 'yes') {
-                        $mflib->instant($sessionToken, 'tmp/' . $email . '~*' . $filen, $filen);
+                        $upload->instant($sessionToken, 'tmp/' . $email . '~*' . $filen, $filen);
                         $GLOBALS['msg'] = "($filen) Uploaded To MediaFire<br>";
                         //Success message
                         echo $GLOBALS['msg'];
-                    } else {
+                    } //$unit == 'yes'
+                    else {
                         if ($unit > 3) {
                             $place = 0;
                             $mflib->fsplit('tmp/' . $email . '~*' . $filen, 'split', $unit); // Splits file into chunks
                             while ($place < $unit) { // loop to upload each chunk
                                 $newpath = "split/" . $place . $email . '~*' . $filen; // File path to split files
-                                $resume  = $mflib->uploadResume($place, $sessionToken, $newpath, 'tmp/' . $email . '~*' . $filen);
-                                if ($resume == FALSE) {
-                                    $mflib->uploadResume($place, $sessionToken, $newpath, 'tmp/' . $email . '~*' . $filen);
-                                }
+                                $resume  = $upload->uploadResume($place, $sessionToken, $newpath, 'tmp/' . $email . '~*' . $filen);
                                 //echo $items['name'].' - Moved to MediaFire Completed<br>';
                                 sleep(1); // sleeps for 1 seconds to insure the upload command is called.
                                 $place++; // increase the current unit number
-                            }
-                        } else {
-                            $mflib->uploadResume('0', $sessionToken, 'tmp/' . $email . '~*' . $filen, null);
+                            } //$place < $unit
+                        } //$unit > 3
+                        else {
+                            $upload->uploadResume('0', $sessionToken, 'tmp/' . $email . '~*' . $filen, null);
                         }
                         $GLOBALS['msg'] = "($filen) Uploaded To MediaFire<br>";
                         //Success message
@@ -110,20 +109,20 @@ if (isset($_POST['upload'])) {
                     }
                     //echo '<br><br>';
                     //$sessionToken = $mflib->userRenewSessionToken($sessionToken);
-                    
                     //echo "File ($filen) Uploaded to MediaFire<br>"; 
                     $filens = 'tmp/' . $email . '~*' . $filen;
                     @unlink($filens);
-                } else {
+                } //move_uploaded_file($_FILES["file"]['tmp_name']["$j"], $path)
+                else {
                     echo 'Upload Failed';
                 }
-            }
-        }
-    } else {
+            } //$_FILES["file"]['name'] != ""
+        } //$j = 0; $j < count($_FILES["file"]['name']); $j++
+    } //count($_FILES["file"]['name']) > 0
+    else {
         $GLOBALS['msg'] = "No files found to upload"; //No file upload message 
     }
 } //end of "if(isset($_POST['upload']))"        
-
 ?>
         </form>
     </body>
