@@ -54,6 +54,14 @@ class mflib
     public $password;
 
     /**
+     * The SHA1 hash string of following email or ekey + password + application_id + api_key
+     *
+     * @access public
+     * @var string
+     */
+    public $appSignature;
+
+    /**
      * The Facebook Access Token of the user whose MediaFire account is 
      * associated with the corresponding Facebook Account (not required if 
      * $email and $password are provided), for getting session token
@@ -865,7 +873,11 @@ class mflib
      */
     public function userGetSignature()
     {
-        return sha1($this->email . $this->password . $this->appId . $this->apiKey);
+        if (!$this->appSignature) {
+            $this->appSignature = sha1($this->email . $this->password . $this->appId . $this->apiKey);
+        }
+
+        return $this->appSignature;
     }
 
     /**
